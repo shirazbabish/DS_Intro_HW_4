@@ -1,0 +1,44 @@
+# -*- coding: utf-8 -*-
+
+import requests
+import json
+dests = open('C:\Users\shira\.spyder-py3\python\dests.txt', "r")
+api_key_geo = ""
+api_key_dis = ""
+source_location = "Jerusalem"
+dictionary = dict()
+
+for destination in dests:
+    destination = destination.rstrip()
+    reuqets_path = "https://maps.googleapis.com/maps/api/distancematrix/json?destinations=%s&origins=%s&key=%s" % (destination,source_location,api_key_dis)
+    result1 = requests.get(reuqets_path).json()
+    while result1['status'] != "OK":
+            result1 = requests.get(reuqets_path).json()
+    distance = result1['rows'][0]['elements'][0]['distance']['text']
+    time =  (result1['rows'][0]['elements'][0]['duration']['value'])/60 # in minuets as requested
+    
+    # geocode
+    reuqets_path = "https://maps.googleapis.com/maps/api/geocode/json?address=%s&key=%s" % (destination,api_key_geo)
+    result2 = requests.get(reuqets_path).json()
+    while result2['status'] != "OK":
+        result2 = requests.get(reuqets_path).json()
+    longitude = result2['results'][0]['geometry']['location']['lng']
+    latitude = result2['results'][0]['geometry']['location']['lat']
+
+    dictionary[destination] = (distance, time, longitude, latitude)
+print(dictionary)
+
+for key,val in dictionary.items():
+    minutes_time = val[1]
+    hours =int( minutes_time // 60)  
+    minutes = int(minutes_time % 60) 
+    print (key,":" ,'\n',
+           '1.	Distance of the destination from Jerusalem in kilometers:',val[0] ,'\n', 
+           '2.	Arrival time from Jerusalem to the destination in hours',hours,' and minutes ',minutes, '\n',
+           '3.	Longitude of the destination:', val[2],'\n',
+           '4.  Latitude of the destination: ', val[3]) 
+    
+sorted_dictionary = {}
+for key,val in dictionary.items():
+    sorted_dictionary[key]=val[0]
+sorted(sorted_dictionary, key=sorted_dictionary.get, reverse=True)[:3]
